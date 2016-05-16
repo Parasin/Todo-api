@@ -61,6 +61,46 @@ app.delete('/todos/:id', function (req, res) {
     }
 });
 
+/* PUT */
+app.put('/todos/:id', function (req, res) {
+    var body = _.pick(req.body, 'description', 'completed');
+    var validAttributes = {};
+    var todoId = parseInt(req.params.id, 10);
+    var matchedTodo = _.findWhere(todos, {id: todoId});
+    
+    if (!matchedTodo) {
+        return res.status(404).json({"error": "No matching todo found."}); 
+    }
+    
+    /* Validate the completed status */
+    if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
+        validAttributes.completed = body.completed;
+    }
+    else if (body.hasOwnProperty('completed')){
+        return res.status(400).json({"error": "Completed not proper"});
+    }
+    else {
+        // Attribute never provided, no problem
+    }
+    
+    /* Validate the description */
+    if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
+        validAttributes.description = body.description;
+    }
+    else if (body.hasOwnProperty('description')) {
+        return res.status(400).json({"error": "Description not proper"});
+    }
+    else {
+        // Attribute never prodivded, no problem
+    }
+    
+    /* Attributes at this point are valid and the todo can be updated,
+       because 'matched todo' is an object it is passed by reference &
+       this call to _.extend(...) is enough to update the object in 'todo' */
+    _.extend(matchedTodo, validAttributes);
+    res.json(matchedTodo);
+});
+
 app.listen(PORT, function () {
     console.log('Express listening on port ' + PORT);
 });
