@@ -27,7 +27,17 @@ app.get('/todos/:id', function (req, res) {
 
 /* Get all todos */
 app.get('/todos', function (req, res) {
-    res.json(todos);
+    var queryParams = req.query;
+    var filteredTodos = todos;
+    
+    /* Filters todos based on the query param containing 'completed' */
+    if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
+        filteredTodos = _.where(filteredTodos, {'completed': true});
+    } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
+        filteredTodos = _.where(filteredTodos, {'completed': false});
+    }
+    
+    res.json(filteredTodos);
 });
 
 /* Create new todo*/
