@@ -69,65 +69,59 @@ app.post('/todos', function (req, res) {
 });
 
 
-/* Delete a todo */
+/* DELETE a todo */
 app.delete('/todos/:id', function (req, res) {
     var todoId = parseInt(req.params.id, 10);
-    var matchedTodo = _.findWhere(todos, {
-        id: todoId
-    });
+    var matchedTodo;
 
-    if (matchedTodo) {
-        todos = _.without(todos, matchedTodo);
-        res.json(matchedTodo);
-    } else {
-        return res.status(404).json({
-            "error": "No todo found with that id."
-        });
-    }
+    /* Find the ID to be Destroyed, destroy it */
+    db.todo.destroy({
+        "where": {
+            "id": todoId
+        }
+    }).then(function (rowsDeleted) {
+        if (rowsDeleted === 0) {
+            res.status(404).json({
+                "error": "Todo not found"
+            });
+        } else {
+            res.status(204).send();
+        }
+    }).catch(function (err) {
+        res.status(500).json(err);
+    });
 });
 
 /* PUT */
 app.put('/todos/:id', function (req, res) {
     var body = _.pick(req.body, 'description', 'completed');
-    var validAttributes = {};
+    var attributes = {};
     var todoId = parseInt(req.params.id, 10);
-    var matchedTodo = _.findWhere(todos, {
-        id: todoId
-    });
 
-    if (!matchedTodo) {
-        return res.status(404).json({
-            "error": "No matching todo found."
-        });
-    }
 
     /* Validate the completed status */
-    if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
-        validAttributes.completed = body.completed;
-    } else if (body.hasOwnProperty('completed')) {
-        return res.status(400).json({
-            "error": "Completed not proper"
-        });
-    } else {
-        // Attribute never provided, no problem
+    if (body.hasOwnProperty('completed')) {
+        attributes.completed = body.completed;
     }
 
     /* Validate the description */
-    if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
-        validAttributes.description = body.description;
-    } else if (body.hasOwnProperty('description')) {
-        return res.status(400).json({
-            "error": "Description not proper"
-        });
-    } else {
-        // Attribute never prodivded, no problem
+    if (body.hasOwnProperty('description')) {
+        attributes.description = body.description;
     }
 
-    /* Attributes at this point are valid and the todo can be updated,
-       because 'matched todo' is an object it is passed by reference &
-       this call to _.extend(...) is enough to update the object in 'todo' */
-    _.extend(matchedTodo, validAttributes);
-    res.json(matchedTodo);
+    db.todo.findById(todoId).then(function (todo) {
+        if (!_.isNull(todo)) {
+            todo.update(attributes).then(function (todo) {
+                res.json(todo.toJSON());
+            }, function (e) {
+                res.status(400).json(e);
+            });
+        } else {
+            res.status(404).send();
+        }
+    }, function () {
+        res.status(500).send();
+    });
 });
 
 // Sync the database
