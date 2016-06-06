@@ -10,6 +10,7 @@
   "description": "",
   "dependencies": {
     "assert-plus": "^1.0.0",
+    "bcryptjs": "^2.3.0",
     "body-parser": "^1.13.3",
     "express": "^4.13.3",
     "pg": "^4.4.1",
