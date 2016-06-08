@@ -1,5 +1,7 @@
 var bcrypt = require('bcryptjs');
 var _ = require('underscore');
+var cryptojs = require('crypto-js');
+var jwt = require('jsonwebtoken');
 
 module.exports = function (sequlize, DataTypes) {
     var user = sequlize.define('user', {
@@ -45,6 +47,24 @@ module.exports = function (sequlize, DataTypes) {
                 var json = this.toJSON();
                 return _.pick(json, 'id', 'email', 'createdAt', 'updatedAt');
             }
+            , "generateToken": function (type) {
+                if (_.isString(type)) {
+                    try {
+                        var stringData = JSON.stringify({
+                            "id": this.get('id')
+                            , "type": type
+                        });
+                        var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#$').toString();
+                        var token = jwt.sign({
+                            "token": encryptedData}, 'qwerty098');
+                        return token;
+                    } catch (err) {
+                        return undefined;
+                    }
+                } else {
+                    return undefined;
+                }
+            }
         }
         , "classMethods": {
             authenticate: function (body) {
@@ -71,6 +91,6 @@ module.exports = function (sequlize, DataTypes) {
             }
         }
     });
-    
+
     return user;
 };
