@@ -56,7 +56,8 @@ module.exports = function (sequlize, DataTypes) {
                         });
                         var encryptedData = cryptojs.AES.encrypt(stringData, 'abc123!@#$').toString();
                         var token = jwt.sign({
-                            "token": encryptedData}, 'qwerty098');
+                            "token": encryptedData
+                        }, 'qwerty098');
                         return token;
                     } catch (err) {
                         return undefined;
@@ -86,6 +87,30 @@ module.exports = function (sequlize, DataTypes) {
                         });
                     } else {
                         return reject();
+                    }
+                });
+            }
+            , findByToken: function (token) {
+                return new Promise(function (resolve, reject) {
+                    try {
+                        // Make sure the token is valid
+                        var decodedJWT = jwt.verify(token, 'qwerty098');
+                        // Create the byte string
+                        var bytes = cryptojs.AES.decrypt(decodedJWT.token, 'abc123!@#$');
+                        // Get the JSON object
+                        var tokenData = JSON.parse(bytes.toString(cryptojs.enc.Utf8));
+
+                        user.findById(tokenData.id).then(function (user) {
+                            if (!_.isNull(user)) {
+                                resolve(user);
+                            } else {
+                                reject();
+                            }
+                        }, function (err) {
+
+                        });
+                    } catch (err) {
+                        reject();
                     }
                 });
             }
